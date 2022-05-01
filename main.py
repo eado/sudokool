@@ -5,27 +5,39 @@ GROUPS = 3
 NTH = GROUPS * 3
 
 # initialize puzzle matrix with all zeros
-puzzle = [[0 for _ in range(0, NTH)] for _ in range(0, NTH)]
-savedPuzzle = [[0 for _ in range(0, NTH)] for _ in range(0, NTH)]
+def genZeros():
+    return [[0 for _ in range(0, NTH)] for _ in range(0, NTH)]
+
+puzzle = genZeros()
+savedPuzzle = genZeros()
+initialPuzzle = genZeros()
+
+# transfer puzzle data from one matrix reference to another
+def transferPuzzle(initial, new):
+    for row in range(0, NTH):
+        for column in range(0, NTH):
+            new[row][column] = initial[row][column] 
+
+# reset puzzle reference to all zeros       
 def setPuzzle():
     for row in range(0, NTH):
         for column in range(0, NTH):
             puzzle[row][column] = 0
 
-def savePuzzle():
-    for row in range(0, NTH):
-        for column in range(0, NTH):
-            savedPuzzle[row][column] = puzzle[row][column] 
+# save digged puzzle
+def savePuzzle(): transferPuzzle(puzzle, savedPuzzle)
 
-def restorePuzzle():
-    for row in range(0, NTH):
-        for column in range(0, NTH):
-            puzzle[row][column] = savedPuzzle[row][column] 
+# restore digged puzzle
+def restorePuzzle(): transferPuzzle(savedPuzzle, puzzle)
 
+# save initially solved puzzle
+def saveInitialPuzzle(): transferPuzzle(puzzle, initialPuzzle)
+
+# check if computer-solved solution is the same as the initial solution
 def sameSolution():
     for row in range(0, NTH):
         for column in range(0, NTH):
-            if puzzle[row][column] != savedPuzzle[row][column]:
+            if puzzle[row][column] != initialPuzzle[row][column]:
                 return False
     return True
 
@@ -41,7 +53,7 @@ def printPuzzle():
             print(num + " ", end="")
         print("|")
     print("-" * (NTH * 2 + 7))
-    print("Blanks: {}\n\n".format(zeros))
+    print("Blanks: {}, Entries: {}\n\n".format(zeros, 81 - zeros))
 
 def getNeighborhood(r, c):
     rx = int(r / GROUPS)
@@ -74,19 +86,19 @@ def createSolvable(restore = False):
     fails = 0
     failed = False
     while True:
-        for row in range(0, NTH):
+        for row in range(0, NTH): # for each neighborhood
             for column in range(0, NTH):
-                if puzzle[row][column] != 0:
+                if puzzle[row][column] != 0: # if cell is already filled, don't retry
                     continue
-                nums = getAppNumbers(row, column)
+                nums = getAppNumbers(row, column) # get applicable numbers
                 # no available numbers
                 if (len(nums) == 0):
-                    restorePuzzle() if restore else setPuzzle()
-                    fails += 1
-                    failed = True
+                    restorePuzzle() if restore else setPuzzle() # revert back to initial puzzle
+                    fails += 1 # count number of cycles
+                    failed = True # break out of loop
                     break
                 else:
-                    index = randint(0, len(nums) - 1)
+                    index = randint(0, len(nums) - 1) # choose a random number to fill
                     puzzle[row][column] = nums[index]
             if failed:
                 break
@@ -97,27 +109,36 @@ def createSolvable(restore = False):
     return fails
 
 def dig():
-    # dig one from each neighborhood
-    sets = []
-    for _ in range(0, 9):
+    dug = 0
+    it = 0
+    while dug < 45: # assert that the number of cells dug is at least 45 (this number changes based on difficulty)
+        it += 1
+        if it > 100: # try to randomly dig 100 times. if we still haven't reached the optimum number, restart
+            transferPuzzle(initialPuzzle, puzzle)
+            it = 0
+            dug = 0
         for row in sample(range(0, GROUPS), GROUPS - 1):
-            for col in sample(range(0, GROUPS), GROUPS - 1):
-                num1 = randint(0, 8)
-                num2 = randint(0, 8)
-                n1 = puzzle[row * GROUPS + (num1 % GROUPS)][col * GROUPS + (num1 // GROUPS)]
-                n2 = puzzle[row * GROUPS + (num2 % GROUPS)][col * GROUPS + (num2 // GROUPS)]
-
-                # print(sets)
-                if {n1, n2} not in sets:
-                    puzzle[row * GROUPS + (num1 % GROUPS)][col * GROUPS + (num1 // GROUPS)] = 0
-                    puzzle[row * GROUPS + (num2 % GROUPS)][col * GROUPS + (num2 // GROUPS)] = 0
-                    sets.append({n1, n2})
-                else:
-                    puzzle[row * GROUPS + (num1 % GROUPS)][col * GROUPS + (num1 // GROUPS)] = 0
+            for col in sample(range(0, GROUPS), GROUPS - 1): # choose a random neighborhood
+                nums = sample(range(1, NTH), NTH - 1) 
+                for num in nums:
+                    r = row * GROUPS + (num % GROUPS) # randomize neighborhood order
+                    c = col * GROUPS + (num // GROUPS)
+                    # print("({}, {})".format(r, c))
+                    entry = puzzle[r][c]
+                    if entry == 0: # no need to repeat dig
+                        continue 
+                    puzzle[r][c] = 0 # attempt dig
+                    appnums = getAppNumbers(r, c)
+                    if len(appnums) == 1: # if there are multiple solutions, don't dig
+                        dug += 1
+                        break
+                    else:
+                        puzzle[r][c] = entry # place entry back
                     
 
 print("Generating:")
 print("Cycles: {}".format(createSolvable()))
+saveInitialPuzzle()
 printPuzzle()           
 
 print("Digging:")
@@ -125,8 +146,63 @@ dig()
 savePuzzle()
 printPuzzle()
 
-print("Solving: ")
-print("Cycles: {}".format(createSolvable(True)))
-printPuzzle()
+cycles = []
+for _ in range(0, 50):
+    print("Solving: ")
+    cycle = createSolvable(True)
+    cycles.append(cycle)
+    print("Cycles: {}".format(cycle))
 
-print("Equal: {}".format(sameSolution()))
+    print("Equal: {}".format(sameSolution()))
+    restorePuzzle()
+
+printPuzzle()
+print(cycles)
+
+# def createSolvable2():
+#     cycles = 0
+#     while len(history) > 0:
+#         cycles += 1
+#         upuzzle, (ur, uc), uavail = history.pop()
+#         transferPuzzle(upuzzle, puzzle)
+#         while len(uavail) > 0:
+#             # print(ur, uc, uavail)
+#             if (puzzle[ur][uc] != 0):
+#                 if uc == NTH - 1 and ur == NTH - 1:
+#                     return cycles
+#                 elif uc == NTH - 1:
+#                     ur += 1
+#                     uc = 0
+#                 else:
+#                     uc += 1
+                
+#                 uavail = getAppNumbers(ur, uc)
+#                 shuffle(uavail)
+#                 continue
+
+#             choice = uavail.pop()
+#             puzzle[ur][uc] = choice
+
+#             cpuzzle = genZeros()
+#             cavail = uavail.copy()
+#             transferPuzzle(puzzle, cpuzzle)
+#             history.append((cpuzzle, (ur, uc), cavail))
+
+#             if uc == NTH - 1 and ur == NTH - 1:
+#                 return cycles
+#             elif uc == NTH - 1:
+#                 ur += 1
+#                 uc = 0
+#             else:
+#                 uc += 1
+            
+#             uavail = getAppNumbers(ur, uc)
+#             shuffle(uavail)
+
+#     return -1
+
+# history: List[Tuple[
+#     List[List[int]],
+#     Tuple[int, int],
+#     List[int]
+# ]] = [(genZeros(), (0, 0), sample([x for x in range(1, NTH + 1)], 9))]
