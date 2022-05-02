@@ -29,6 +29,15 @@ def printPuzzle():
         print("|")
     print("-" * (NTH * 2 + 7))
 
+def printPuzzleLatex():
+    for (r, row) in enumerate(puzzle):
+        print("\setrow ", end="")
+        for (c, entry) in enumerate(row):
+            print("  ", end="") if c % 3 == 0 else None
+            num = " " if entry == 0 else str(entry)
+            print("{" + num + "}", end="")
+        print("")
+
 lines = []
 while True:
     try:
@@ -143,3 +152,4 @@ if randint(0, 1) == 0:
     puzzle = [[puzzle[j][i] for j in range(len(puzzle))] for i in range(len(puzzle[0])-1,-1,-1)]
 
 printPuzzle()
+printPuzzleLatex()

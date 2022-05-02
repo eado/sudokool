@@ -64,7 +64,8 @@ def getNeighborhood(r, c):
             neigh.append(puzzle[rn][cn])
     return neigh
 
-# for a certain position in the matrix, get the possible valid numbers to fill
+# for a certain position in the matrix, 
+# get the possible valid numbers to fill
 def getAppNumbers(r, c):
     arr = [x for x in range(1, NTH + 1)]
     # get row
@@ -88,17 +89,20 @@ def createSolvable(restore = False):
     while True:
         for row in range(0, NTH): # for each neighborhood
             for column in range(0, NTH):
-                if puzzle[row][column] != 0: # if cell is already filled, don't retry
+                if puzzle[row][column] != 0: 
+                    # if cell is already filled, don't retry
                     continue
                 nums = getAppNumbers(row, column) # get applicable numbers
                 # no available numbers
                 if (len(nums) == 0):
-                    restorePuzzle() if restore else setPuzzle() # revert back to initial puzzle
+                    restorePuzzle() if restore else setPuzzle() 
+                    # revert back to initial puzzle
                     fails += 1 # count number of cycles
                     failed = True # break out of loop
                     break
                 else:
-                    index = randint(0, len(nums) - 1) # choose a random number to fill
+                    index = randint(0, len(nums) - 1) 
+                    # choose a random number to fill
                     puzzle[row][column] = nums[index]
             if failed:
                 break
@@ -111,25 +115,29 @@ def createSolvable(restore = False):
 def dig():
     dug = 0
     it = 0
-    while dug < 45: # assert that the number of cells dug is at least 45 (this number changes based on difficulty)
+    while dug < 45: # assert that the number of cells dug 
+        # is at least 45 (this number changes based on difficulty)
         it += 1
-        if it > 100: # try to randomly dig 100 times. if we still haven't reached the optimum number, restart
+        if it > 100: # try to randomly dig 100 times. 
+            # if we still haven't reached the optimum number, restart
             transferPuzzle(initialPuzzle, puzzle)
             it = 0
             dug = 0
         for row in sample(range(0, GROUPS), GROUPS - 1):
-            for col in sample(range(0, GROUPS), GROUPS - 1): # choose a random neighborhood
+            for col in sample(range(0, GROUPS), GROUPS - 1): 
+                # choose a random neighborhood
                 nums = sample(range(1, NTH), NTH - 1) 
                 for num in nums:
-                    r = row * GROUPS + (num % GROUPS) # randomize neighborhood order
+                    r = row * GROUPS + (num % GROUPS) 
+                    # randomize neighborhood order
                     c = col * GROUPS + (num // GROUPS)
-                    # print("({}, {})".format(r, c))
                     entry = puzzle[r][c]
                     if entry == 0: # no need to repeat dig
                         continue 
                     puzzle[r][c] = 0 # attempt dig
                     appnums = getAppNumbers(r, c)
-                    if len(appnums) == 1: # if there are multiple solutions, don't dig
+                    if len(appnums) == 1: 
+                        # if there are multiple solutions, don't dig
                         dug += 1
                         break
                     else:
@@ -158,51 +166,3 @@ for _ in range(0, 50):
 
 printPuzzle()
 print(cycles)
-
-# def createSolvable2():
-#     cycles = 0
-#     while len(history) > 0:
-#         cycles += 1
-#         upuzzle, (ur, uc), uavail = history.pop()
-#         transferPuzzle(upuzzle, puzzle)
-#         while len(uavail) > 0:
-#             # print(ur, uc, uavail)
-#             if (puzzle[ur][uc] != 0):
-#                 if uc == NTH - 1 and ur == NTH - 1:
-#                     return cycles
-#                 elif uc == NTH - 1:
-#                     ur += 1
-#                     uc = 0
-#                 else:
-#                     uc += 1
-                
-#                 uavail = getAppNumbers(ur, uc)
-#                 shuffle(uavail)
-#                 continue
-
-#             choice = uavail.pop()
-#             puzzle[ur][uc] = choice
-
-#             cpuzzle = genZeros()
-#             cavail = uavail.copy()
-#             transferPuzzle(puzzle, cpuzzle)
-#             history.append((cpuzzle, (ur, uc), cavail))
-
-#             if uc == NTH - 1 and ur == NTH - 1:
-#                 return cycles
-#             elif uc == NTH - 1:
-#                 ur += 1
-#                 uc = 0
-#             else:
-#                 uc += 1
-            
-#             uavail = getAppNumbers(ur, uc)
-#             shuffle(uavail)
-
-#     return -1
-
-# history: List[Tuple[
-#     List[List[int]],
-#     Tuple[int, int],
-#     List[int]
-# ]] = [(genZeros(), (0, 0), sample([x for x in range(1, NTH + 1)], 9))]
